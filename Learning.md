@@ -38,9 +38,10 @@
  # Pytorch 框架实现常见的 CNN 框架 #
  ## VGG 模型 ##
 - 该模型算是比较简单的结构，可以参考其论文https://arxiv.org/pdf/1409.1556.pdf 吴恩达的笔记 https://www.cnblogs.com/szxspark/p/8442049.html
-- ![](https://i.imgur.com/LI0B5S5.png) 图片说明：表格中 convK-N 代表有 N 个 KxK 卷积，maxpool 代表最大池化，FC-N 代表 N 个全连接神经元，所有的卷积后面都有 ReLU 层。最大池化层是负责缩小图像，大小与步长都为2
+- ![](https://i.imgur.com/LI0B5S5.png) 
+- 图片说明：表格中 convK-N 代表有 N 个 KxK 卷积，maxpool 代表最大池化，FC-N 代表 N 个全连接神经元，所有的卷积后面都有 ReLU 层。最大池化层是负责缩小图像，大小与步长都为2
     
-    VGG11/13/16/19 in Pytorch.'''
+  ` 
     import torch
     import torch.nn as nn
 
@@ -83,7 +84,7 @@
     net = VGG('VGG11')
     x = torch.randn(2,3,32,32)
     y = net(x)
-    print(y.size())
+    print(y.size())`
 
 - ## ResNet模型 ##
 - ResNet 引入了残差网络的概念
