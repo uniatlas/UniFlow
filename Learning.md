@@ -87,8 +87,10 @@
     print(y.size())`
 
 - ## ResNet模型 ##
-- ResNet 引入了残差网络的概念
-
+- ResNet 引入了残差网络的概念,神经网络越深，效果往往越好，但是极深的网络并不容易训练。
+![](https://i.imgur.com/jvACVWB.png)
+如图所示，x 表示输入，F(x) 表示残差块在第二层激活函数之前的输出，即 F(x)=W2σ(W1x)，其中 W1 和 W2 表示第一层和第二层的权重，σ 表示 ReLU 激活函数。（这里省略了 bias。）最后残差块的输出是 σ(F(x)+x)。ResNet 网络就是由基本的残差模组组成的。对代码的解读参考 https://blog.csdn.net/alxe_made/article/details/84424577
+以下是我自己写的对代码的注释
 
 
 
