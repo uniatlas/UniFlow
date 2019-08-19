@@ -1,6 +1,20 @@
 # 概念 #
 ## 迁移学习 ##
 迁移学习利用预训练模型，可以让人们用少量数据集或者较少的计算力得到顶尖的结果，是一种非常强大的技术。预训练模型此前会在相似的、更大的数据集上进行训练。由于模型无需从零开始学习，它可以比那些用更少数据和计算时间的模型得到更精确的结果。
+## 近期 NAS 相关总结 ##
+1.DARTS [1]：第一个能work的 end2end 基于梯度反传的 NAS 框架，当然你也可选择ENAS（重点是开源了，而且代码写得易懂，后面几个文章都是基于这个做的）。
+
+2.GDAS [2]：百度出品，提出了可微的operation sampler，故每次只需优化采样到的部分子图，故特点就是一个字：快 （4 GPU hours）。
+
+3.DenseNAS [3]：地平线出品，提出了可以同时搜 block的宽度和空间分辨率的可微分NAS，story讲得还行，实验部分有点虚。
+
+4.P-DARTS [4]：华为出品，致力于解决在proxy训练与target测试的模型depth gap问题，参考李飞飞 PNAS 的思路用在block间。
+
+5.PC-DARTS [5]：华为出品，针对现有DARTS模型训练时需要 large memory and computing问题，提出了 channel sampling 和 edge normalization的技术，故两个字：更快更好 （0.1 GPU-days）。
+6.FairNAS [6]:小米出品，声称解决了 DL 模型 rank 稳定性的核心问题，在 ImageNet 分类任务上超过 Google Brain 的 MnasNet（CVPR 2019）和 MIT 韩松等人提出的 Proxyless（ICLR 2019）。
+
+它们之间的联系：
+无疑 [2], [3], [4], [5] 都是基于 DARTS 来进行拓展；[2] 和 [5] 都是希望加快搜索速度，故采取的sampling的策略和目标也不同；[3] 和 [4] 分别就模型 宽度 和 深度 方面进行拓展。更准确地来说，[3] 是针对移动端来做的，更类似应该是 ProxylessNAS, FBNet 。
 
 # GDAS #
 论文提出了一些神经架构搜索的方法，论文链接：https://github.com/D-X-Y/GDAS/blob/master/data/GDAS.pdf
