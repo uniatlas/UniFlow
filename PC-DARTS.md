@@ -41,12 +41,111 @@ B、边缘正规化：
 sep_conv_xxxx表示操作，0/1表示输入来源
 
 (‘sep_conv_3x3’, 1), (‘sep_conv_3x3’, 0) —-> 节点0
+
 (‘sep_conv_3x3’, 0), (‘sep_conv_3x3’, 1) —-> 节点1
+
 (‘sep_conv_3x3’, 1), (‘skip_connect’, 0) —-> 节点2
+
 (‘skip_connect’, 0), (‘dil_conv_3x3’, 2) —-> 节点3
+
 normal_concat=[2, 3, 4, 5] —-> cell输出c_{k}
 ## 搜索过程中的几个关键点 ##
-首先明确，PC-DARTS 与 DARTS 一样，搜索实际只搜 cell 内结构，整个模型的网络结构是预定好的，比如多少层，网络宽度，cell 内几个节点等；
+首先明确，PC-DARTS 与 DARTS 一样，搜索实际只搜 cell 内结构，整个模型的网络结构是预定好的，比如多少层，网络宽度，cell 内几个节点等，输入固定是2个节点；
 在构建搜索的网络结构时，有几个特别的地方：
-1.预构建 cell 时，采用的一个 MixedOp：包含了两个节点所有可能的连接(genotype 中的 PRIMITIVES)；
+1.预构建 cell 时，采用的一个 MixedOp：包含了两个节点所有可能的连接(genotype 中的 PRIMITIVES)；最后 cell 是由 concat 操作组成。
 2.初始化了一个 alphas 矩阵，网络做 forward 时，参数传入，在 cell 里使用，搜索过程中所有可能连接都在时，计算mixedOp的输出，采用加权的形式。
+# 几个函数解析 #
+- ## MixedOp ##
+
+```
+lass MixedOp(nn.Module):#MixedOp 函数用于把两节点间的 PRIMITIVES 里定义的所有操作都连接上
+
+  def __init__(self, C, stride):#C 是输入 channel
+    super(MixedOp, self).__init__()
+    self._ops = nn.ModuleList()
+    self.mp = nn.MaxPool2d(2,2)
+
+    for primitive in PRIMITIVES:#PRIMITIVES 指2节点之间的操作
+      op = OPS[primitive](C //4, stride, False)
+      if 'pool' in primitive:
+        op = nn.Sequential(op, nn.BatchNorm2d(C //4, affine=False))
+      self._ops.append(op)
+
+
+  def forward(self, x, weights):
+    #channel proportion k=4  
+    dim_2 = x.shape[1]
+    xtemp = x[ : , :  dim_2//4, :, :]
+    xtemp2 = x[ : ,  dim_2//4:, :, :]
+    temp1 = sum(w * op(xtemp) for w, op in zip(weights, self._ops))#将所有的输出利用 weight 进行加权
+    #reduction cell needs pooling before concat
+    if temp1.shape[2] == x.shape[2]:
+      ans = torch.cat([temp1,xtemp2],dim=1)
+    else:
+      ans = torch.cat([temp1,self.mp(xtemp2)], dim=1)
+    ans = channel_shuffle(ans,4)
+    #ans = torch.cat([ans[ : ,  dim_2//4:, :, :],ans[ : , :  dim_2//4, :, :]],dim=1)
+    #except channe shuffle, channel shift also works
+    return ans
+
+```
+## cell 构建 ##
+```
+class Cell(nn.Module):
+
+  def __init__(self, steps, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
+    super(Cell, self).__init__()
+    self.reduction = reduction
+
+    if reduction_prev:
+      self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
+    else:
+      self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
+    self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
+    self._steps = steps#step 等于 4 是固定的
+    self._multiplier = multiplier
+
+    self._ops = nn.ModuleList()
+    self._bns = nn.ModuleList()
+    for i in range(self._steps):#定义 cell  N=6 扣去 2个输入，还剩 4个节点
+      for j in range(2+i):#对于节点0会有2个 MixedOp,对于节点1会有3个 MixedOp 依此类推，self._ops 总共会有 14 个 MixedOp
+        stride = 2 if reduction and j < 2 else 1
+        op = MixedOp(C, stride)
+        self._ops.append(op)
+  def forward(self, s0, s1, weights,weights2):#构建 cell s0 与 s1 表示2个输入节点
+    s0 = self.preprocess0(s0)
+    s1 = self.preprocess1(s1)
+
+    states = [s0, s1]#weight[]长度是14，2+3+4+5，所以可以理解 offset 的作用了
+    offset = 0
+    for i in range(self._steps):
+      s = sum(weights2[offset+j]*self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
+      offset += len(states)
+      states.append(s)
+
+    return torch.cat(states[-self._multiplier:], dim=1)
+```
+##  architect函数 ##
+architect 函数是代码中对应与论文中的计算公式的重要地方，主要用于对 arch_parameters() 参数的更新，即[
+self.alphas_normal,self.alphas_reduce,self.betas_normal,self.betas_reduce,]几个参数。
+
+```
+class Architect(object):
+
+  def __init__(self, model, args):
+    self.network_momentum = args.momentum
+    self.network_weight_decay = args.weight_decay
+    self.model = model
+    self.optimizer = torch.optim.Adam(self.model.arch_parameters(),
+        lr=args.arch_learning_rate, betas=(0.5, 0.999), weight_decay=args.arch_weight_decay)
+
+....
+  def step(self, input_train, target_train, input_valid, target_valid, eta, network_optimizer, unrolled):#用于参数的更新
+    self.optimizer.zero_grad()
+    if unrolled:
+        self._backward_step_unrolled(input_train, target_train, input_valid, target_valid, eta, network_optimizer)
+    else:
+        self._backward_step(input_valid, target_valid)
+    self.optimizer.step()
+
+```
