@@ -33,3 +33,20 @@ B、边缘正规化：
 ![](https://i.imgur.com/q3xRZtM.png)
 
 由于 edge 超参 [公式] 在训练阶段是共享的，故学习到的网络更少依赖于不同iterations间的采样到的channels，使得网络搜索过程更稳定。当网络搜索完毕，node间的operation选择由operation-level和edge-level的参数相乘后共同决定。
+
+# 代码解释 #
+## genotype结构解析 ##
+![](https://i.imgur.com/CbDLasZ.png)
+在代码中我们看到 genotype 这个结构出现了很多次，那么这个结构代表的是什么意思呢？取了 genotype 里的一个 normal cell 的定义及其对应的 cell 结构图首先说明下，这个定义的解释。DARTS 搜索的也就是这个定义。normal 定义里(‘sep_conv_3x3’, 1)的 0，1，2，3，4，5 对应到图中的红色字体标注的。从 normal 文字定义两个元组一组，映射到图中一个蓝色方框的节点(这个是作者搜索出来的结构，结构不一样，对应关系不一定是这样的)。
+sep_conv_xxxx表示操作，0/1表示输入来源
+
+(‘sep_conv_3x3’, 1), (‘sep_conv_3x3’, 0) —-> 节点0
+(‘sep_conv_3x3’, 0), (‘sep_conv_3x3’, 1) —-> 节点1
+(‘sep_conv_3x3’, 1), (‘skip_connect’, 0) —-> 节点2
+(‘skip_connect’, 0), (‘dil_conv_3x3’, 2) —-> 节点3
+normal_concat=[2, 3, 4, 5] —-> cell输出c_{k}
+## 搜索过程中的几个关键点 ##
+首先明确，PC-DARTS 与 DARTS 一样，搜索实际只搜 cell 内结构，整个模型的网络结构是预定好的，比如多少层，网络宽度，cell 内几个节点等；
+在构建搜索的网络结构时，有几个特别的地方：
+1.预构建 cell 时，采用的一个 MixedOp：包含了两个节点所有可能的连接(genotype 中的 PRIMITIVES)；
+2.初始化了一个 alphas 矩阵，网络做 forward 时，参数传入，在 cell 里使用，搜索过程中所有可能连接都在时，计算mixedOp的输出，采用加权的形式。
