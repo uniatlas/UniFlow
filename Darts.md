@@ -73,7 +73,7 @@ $\frac{\exp \left(\alpha_{0}^{(i, j)}\right)}{\sum_{o^{\prime} \in \mathcal{O}} 
 
 1. 首先初始化 alphas（是一个参数矩阵 tensor ，注意个数是和 node 节点个数相同，这里的 node 数目是不包含输入的两个节点以及最后 concat 的节点）, 合格 alphas 会在之后计算 mixOp 的时候作为加权参数
 
-2. 调用 SearchCNN 类生成 net，这是按照一定的规则做的（默认8层，8/3-8*2/3 层间是执行 reduce 操作，同时 channel * 2 ）,调用 SearchCell 搜索 Cell
+2. 调用 SearchCNN 类生成 net，这是按照一定的规则做的（默认8层，8/3和8*2/3 层间是执行 reduce 操作，同时 channel * 2 ）,调用 SearchCell 搜索 Cell
 
 3. SearchCell 根据传入的前一个 cell 是否 reduce ，是的话 c_{k-1} 节点将进行 FactorizedReduce 操作，c{k-2}  进行 StdConv，构建 dag 的时候需要考虑到两个输入节点，通过 遍历得到一个 dag  注意这个 dag 是类似于paper 中的全部连接并且全部节点上有 MixedOp 构建的所有的待选 op，构建出整个图
 
