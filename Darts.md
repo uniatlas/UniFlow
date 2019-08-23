@@ -131,7 +131,7 @@ $\frac{\exp \left(\alpha_{0}^{(i, j)}\right)}{\sum_{o^{\prime} \in \mathcal{O}} 
 1. AugmentCNN
 
    ```python
-   #注意传入搜索出的 genotype, 默认层数为 20 (注意在 20/3 - 40/3 之间的层 channel*2 执行 reduce 操作)， 默认使用 aux
+   #注意传入搜索出的 genotype, 默认层数为 20 (注意在 20/3 和 40/3 这两层 channel*2 执行 reduce 操作)， 默认使用 aux
    model = AugmentCNN(input_size, input_channels, config.init_channels, n_classes, config.layers,
                           use_aux, config.genotype)
    
