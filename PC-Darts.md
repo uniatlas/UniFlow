@@ -1,3 +1,16 @@
+* [PC-Darts](#pc-darts)
+   * [1. 论文解析](#1-论文解析)
+      * [1. 解决什么问题？(相对于 Darts, 和 Darts 相同的不提)](#1-解决什么问题相对于-darts-和-darts-相同的不提)
+      * [2. 思想](#2-思想)
+      * [3. trick](#3-trick)
+      * [4. 方法](#4-方法)
+      * [5. 实验](#5-实验)
+      * [6. 深入研究](#6-深入研究)
+   * [2. 代码解析 (imagenet 分析) 基于原始的 darts 实现](#2-代码解析-imagenet-分析-基于原始的-darts-实现)
+      * [1. NetWork](#1-network)
+      * [2. Cell](#2-cell)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 ### PC-Darts
 
 全称： Partial Channel Connections for Memory-Efficient Differentiable Architecture Search 部分通道连接构建更内存更有效的可微框架搜索
