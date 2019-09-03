@@ -1,3 +1,14 @@
+* [Once for All: Train One Network and Specialize it for Efficient Deployment](#once-for-all-train-one-network-and-specialize-it-for-efficient-deployment)
+   * [1. 论文解析](#1-论文解析)
+      * [1. 思路](#1-思路)
+      * [2. 相关工作](#2-相关工作)
+      * [3. 方法](#3-方法)
+      * [4. 实验](#4-实验)
+   * [2. 代码分析](#2-代码分析)
+   * [3. 引用](#3-引用)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
 ### Once for All: Train One Network and Specialize it for Efficient Deployment
 
 [论文](https://arxiv.org/pdf/1908.09791.pdf)、[代码]()
